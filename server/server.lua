@@ -1,9 +1,9 @@
-RegisterServerEvent('eden_garage:debug')
-RegisterServerEvent('eden_garage:deletevehicle_sv')
-RegisterServerEvent('eden_garage:modifystate')
-RegisterServerEvent('eden_garage:pay')
-RegisterServerEvent('eden_garage:payhealth')
-RegisterServerEvent('eden_garage:logging')
+RegisterServerEvent('esx_garage:debug')
+RegisterServerEvent('esx_garage:deletevehicle_sv')
+RegisterServerEvent('esx_garage:modifystate')
+RegisterServerEvent('esx_garage:pay')
+RegisterServerEvent('esx_garage:payhealth')
+RegisterServerEvent('esx_garage:logging')
 ESX = nil
 
 TriggerEvent('esx:getSharedObject', function(obj)
@@ -11,13 +11,15 @@ TriggerEvent('esx:getSharedObject', function(obj)
 end)
 
 -- Vehicle fetch
-ESX.RegisterServerCallback('eden_garage:getVehicles', function(source, cb)
+ESX.RegisterServerCallback('esx_garage:getVehicles', function(source, cb, type)
     local _source = source
     local xPlayer = ESX.GetPlayerFromId(_source)
     local vehicules = {}
 
-    MySQL.Async.fetchAll('SELECT * FROM owned_vehicles WHERE owner=@identifier', {
-        ['@identifier'] = xPlayer.getIdentifier()
+    MySQL.Async.fetchAll('SELECT * FROM owned_vehicles WHERE owner=@identifier AND type=@type AND stored=@stored', {
+        ['@identifier'] = xPlayer.getIdentifier(),
+        ['@type'] = 'vehicle',
+        ['@stored'] = '0'
     }, function(data)
         for _, v in pairs(data) do
             local vehicle = json.decode(v.vehicle)
@@ -35,7 +37,7 @@ end)
 
 -- End vehicle fetch
 -- Store & update vehicle properties
-ESX.RegisterServerCallback('eden_garage:stockv', function(source, cb, vehicleProps)
+ESX.RegisterServerCallback('esx_garage:stockv', function(source, cb, vehicleProps)
     local isFound = false
     local _source = source
     local xPlayer = ESX.GetPlayerFromId(_source)
@@ -60,13 +62,13 @@ ESX.RegisterServerCallback('eden_garage:stockv', function(source, cb, vehiclePro
     cb(isFound)
 end)
 
-AddEventHandler('eden_garage:deletevehicle_sv', function(vehicle)
-    TriggerClientEvent('eden_garage:deletevehicle_cl', -1, vehicle)
+AddEventHandler('esx_garage:deletevehicle_sv', function(vehicle)
+    TriggerClientEvent('esx_garage:deletevehicle_cl', -1, vehicle)
 end)
 
 -- End vehicle store
 -- Change state of vehicle
-AddEventHandler('eden_garage:modifystate', function(vehicle, state)
+AddEventHandler('esx_garage:modifystate', function(vehicle, state)
     local _source = source
     local xPlayer = ESX.GetPlayerFromId(_source)
     local vehicules = getPlayerVehicles(xPlayer.getIdentifier())
@@ -99,13 +101,14 @@ end)
 -- End state update
 -- Function to recover plates deprecated and removed.
 -- Get list of vehicles already out
-ESX.RegisterServerCallback('eden_garage:getOutVehicles', function(source, cb)
+ESX.RegisterServerCallback('esx_garage:getOutVehicles', function(source, cb)
     local _source = source
     local xPlayer = ESX.GetPlayerFromId(_source)
     local vehicules = {}
 
-    MySQL.Async.fetchAll('SELECT * FROM owned_vehicles WHERE owner=@identifier AND state=false', {
-        ['@identifier'] = xPlayer.getIdentifier()
+    MySQL.Async.fetchAll('SELECT * FROM owned_vehicles WHERE owner=@identifier AND state=false AND type=@type', {
+        ['@identifier'] = xPlayer.getIdentifier(),
+        ['@type'] = 'vehicle'  
     }, function(data)
         for _, v in pairs(data) do
             local vehicle = json.decode(v.vehicle)
@@ -118,10 +121,10 @@ end)
 
 -- End out list
 -- Check player has funds
-ESX.RegisterServerCallback('eden_garage:checkMoney', function(source, cb)
+ESX.RegisterServerCallback('esx_garage:checkMoney', function(source, cb)
     local xPlayer = ESX.GetPlayerFromId(source)
 
-    if xPlayer.getMoney() >= Config.Price then
+    if xPlayer.get('money') >= Config.Price then
         cb(true)
     else
         cb(false)
@@ -130,7 +133,7 @@ end)
 
 -- End funds check
 -- Withdraw money
-AddEventHandler('eden_garage:pay', function()
+AddEventHandler('esx_garage:pay', function()
     local xPlayer = ESX.GetPlayerFromId(source)
     xPlayer.removeMoney(Config.Price)
     TriggerClientEvent('esx:showNotification', source, _U('you_paid', Config.Price))
@@ -143,6 +146,7 @@ function getPlayerVehicles(identifier)
 
     local data = MySQL.Sync.fetchAll('SELECT * FROM owned_vehicles WHERE owner=@identifier', {
         ['@identifier'] = identifier
+        
     })
 
     for _, v in pairs(data) do
@@ -159,7 +163,7 @@ end
 
 -- End fetch vehicles
 -- Debug
-AddEventHandler('eden_garage:debug', function(var)
+AddEventHandler('esx_garage:debug', function(var)
     print(to_string(var))
 end)
 
@@ -206,13 +210,13 @@ end
 
 -- End debug
 -- Return all vehicles to garage (state update) on server restart
-AddEventHandler('onMySQLReady', function()
-    MySQL.Sync.execute('UPDATE owned_vehicles SET state=true WHERE state=false', {})
-end)
+--AddEventHandler('onMySQLReady', function()
+--    MySQL.Sync.execute('UPDATE owned_vehicles SET state=true WHERE state=false', {})
+--end)
 
 -- End vehicle return
 -- Pay vehicle repair cost
-AddEventHandler('eden_garage:payhealth', function(price)
+AddEventHandler('esx_garage:payhealth', function(price)
     local xPlayer = ESX.GetPlayerFromId(source)
 
     if price < 0 then
@@ -225,7 +229,7 @@ end)
 
 -- End repair cost
 -- Log to the console
-AddEventHandler('eden_garage:logging', function(logging)
+AddEventHandler('esx_garage:logging', function(logging)
     RconPrint(logging)
 end)
 -- End console log
