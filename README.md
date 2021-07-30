@@ -1,7 +1,7 @@
 # esx_drp_garage
 ## THIS SCRIPT IS NO LONGER BEING MAINTAINED I DO NOT WORK WITH ESX ANYMORE. I WILL ACCEPT ANY PULL REQUEST FIXING ISSUES
 Custom Garage for ESX
-This was originally modified for Dream Roleplay Serious rp server.
+This was originally modified for Dream Roleplay Serious rp server. then ReModified for Midnight Club: Unlmited PVERP racing server to add real parking support
 Garage only takes into account vehicles purchased in the dealership and also vehicles that have been stored or taken out.
 
 ## Requirements
